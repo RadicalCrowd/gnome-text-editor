@@ -38,6 +38,9 @@
     </child>
     <child>
       <object class="AdwMultiLayoutView" id="multi_layout">
+        <child type="folder_sidebar">
+          <object class="EditorFolderPanel" id="folder_panel"/>
+        </child>
         <child type="properties">
           <object class="EditorPropertiesPanel">
             <binding name="page">
@@ -162,6 +165,13 @@
               </object>
             </property>
             <child type="start">
+              <object class="GtkToggleButton" id="folder_sidebar_button">
+                <property name="tooltip-text" translatable="yes">Toggle Folder Sidebar (Ctrl+Shift+E)</property>
+                <property name="icon-name">sidebar-show-symbolic</property>
+                <property name="active" bind-source="folder_split_view" bind-property="show-sidebar" bind-flags="bidirectional|sync-create"/>
+              </object>
+            </child>
+            <child type="start">
               <object class="GtkMenuButton" id="open_menu_button">
                 <property name="tooltip-text" translatable="yes">Recently Used Documents</property>
                 <style>
@@ -280,18 +290,31 @@
                   </object>
                 </child>
                 <property name="content">
-                  <object class="AdwOverlaySplitView" id="split_view">
-                    <property name="sidebar-position">end</property>
+                  <object class="AdwOverlaySplitView" id="folder_split_view">
+                    <property name="sidebar-position">start</property>
                     <property name="show-sidebar">false</property>
-                    <property name="min-sidebar-width">350</property>
-                    <property name="content">
-                      <object class="AdwLayoutSlot">
-                        <property name="id">content</property>
-                      </object>
-                    </property>
+                    <property name="min-sidebar-width">220</property>
+                    <property name="max-sidebar-width">350</property>
                     <property name="sidebar">
                       <object class="AdwLayoutSlot">
-                        <property name="id">properties</property>
+                        <property name="id">folder_sidebar</property>
+                      </object>
+                    </property>
+                    <property name="content">
+                      <object class="AdwOverlaySplitView" id="split_view">
+                        <property name="sidebar-position">end</property>
+                        <property name="show-sidebar">false</property>
+                        <property name="min-sidebar-width">350</property>
+                        <property name="content">
+                          <object class="AdwLayoutSlot">
+                            <property name="id">content</property>
+                          </object>
+                        </property>
+                        <property name="sidebar">
+                          <object class="AdwLayoutSlot">
+                            <property name="id">properties</property>
+                          </object>
+                        </property>
                       </object>
                     </property>
                   </object>
@@ -357,6 +380,11 @@
         <attribute name="label" translatable="yes">_New Window</attribute>
         <attribute name="action">app.new-window</attribute>
         <attribute name="accel">&lt;control&gt;n</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Open _Folder…</attribute>
+        <attribute name="action">win.open-folder</attribute>
+        <attribute name="accel">&lt;control&gt;&lt;shift&gt;o</attribute>
       </item>
     </section>
     <section>

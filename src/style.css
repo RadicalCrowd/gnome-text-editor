@@ -166,3 +166,32 @@ page positionlabel:backdrop {
 row.location.property .subtitle {
   filter: none;
 }
+
+/* EditorFolderPanel */
+window.org-gnome-TextEditor .folder-panel {
+  background-color: @sidebar_bg_color;
+  color: @sidebar_fg_color;
+}
+
+window.org-gnome-TextEditor .folder-panel listview {
+  background: none;
+  color: inherit;
+  padding: 2px 4px;
+}
+
+window.org-gnome-TextEditor .folder-panel listview row {
+  border-radius: 6px;
+  margin: 1px 4px;
+  padding: 2px 4px;
+  min-height: 28px;
+}
+
+window.org-gnome-TextEditor .folder-panel listview row:hover {
+  background-color: alpha(currentColor, 0.07);
+}
+
+window.org-gnome-TextEditor .folder-panel listview row:selected {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+}
+

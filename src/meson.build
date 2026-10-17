@@ -12,6 +12,7 @@ editor_sources = [
   'editor-info-bar.c',
   'editor-file-manager.c',
   'editor-focus-chain.c',
+  'editor-folder-panel.c',
   'editor-frame-source.c',
   'editor-fullscreen-box.c',
   'editor-joined-menu.c',

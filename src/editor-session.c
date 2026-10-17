@@ -237,6 +237,20 @@ add_window_state (EditorSession   *self,
                                     "{'maximized', <%b>}",
                                     gtk_window_is_maximized (GTK_WINDOW (window)));
 
+      {
+        GFile *folder = _editor_window_get_folder (window);
+        if (folder != NULL)
+          {
+            g_autofree char *folder_uri = g_file_get_uri (folder);
+            g_variant_builder_add_parsed (builder,
+                                          "{'folder-uri', <%s>}",
+                                          folder_uri);
+          }
+        g_variant_builder_add_parsed (builder,
+                                      "{'show-folder-sidebar', <%b>}",
+                                      _editor_window_get_show_folder_sidebar (window));
+      }
+
       /* Add all of the pages from the window */
       g_variant_builder_open (builder, G_VARIANT_TYPE ("{sv}"));
       g_variant_builder_add (builder, "s", "pages");
@@ -1408,6 +1422,18 @@ editor_session_open (EditorSession           *self,
   uri = g_file_get_uri (file);
   g_debug ("Attempting to open file: \"%s\"", uri);
 
+  if (g_file_query_file_type (file, G_FILE_QUERY_INFO_NONE, NULL) == G_FILE_TYPE_DIRECTORY)
+    {
+      if (window == NULL)
+        window = find_or_create_window (self);
+
+      _editor_window_open_folder (window, file);
+      gtk_window_present (GTK_WINDOW (window));
+      _editor_session_mark_dirty (self);
+
+      return NULL;
+    }
+
   if ((page = find_page_for_file (self, file)))
     {
       _editor_page_raise (page);
@@ -1823,7 +1849,10 @@ editor_session_restore_v1 (EditorSession *self,
   while (g_variant_iter_loop (&iter, "@a{sv}", &window))
     {
       g_autoptr(GVariant) pages = NULL;
+      const char *folder_uri = NULL;
       gboolean maximized = FALSE;
+      gboolean show_folder_sidebar = FALSE;
+      gboolean has_folder;
 
       if (!g_variant_lookup (window, "size", "(uu)", &width, &height) ||
           width > HUGE_WINDOW || height > HUGE_WINDOW)
@@ -1835,21 +1864,35 @@ editor_session_restore_v1 (EditorSession *self,
       if (!g_variant_lookup (window, "maximized", "b", &maximized))
         maximized = FALSE;
 
-      if ((pages = g_variant_lookup_value (window, "pages", G_VARIANT_TYPE ("aa{sv}"))) &&
-          g_variant_n_children (pages) > 0)
+      has_folder = g_variant_lookup (window, "folder-uri", "&s", &folder_uri) && folder_uri && *folder_uri;
+
+      if (((pages = g_variant_lookup_value (window, "pages", G_VARIANT_TYPE ("aa{sv}"))) &&
+           g_variant_n_children (pages) > 0) || has_folder)
         {
           EditorWindow *ewin = _editor_session_create_window_no_draft (self);
 
           if (width > 0 && height > 0)
             gtk_window_set_default_size (GTK_WINDOW (ewin), width, height);
 
-          if (!editor_session_restore_v1_pages (self, ewin, pages))
+          if (pages != NULL && g_variant_n_children (pages) > 0)
             {
-              had_failure = TRUE;
-              gtk_window_destroy (GTK_WINDOW (ewin));
-              g_ptr_array_remove (self->windows, ewin);
-              continue;
+              if (!editor_session_restore_v1_pages (self, ewin, pages))
+                {
+                  had_failure = TRUE;
+                  gtk_window_destroy (GTK_WINDOW (ewin));
+                  g_ptr_array_remove (self->windows, ewin);
+                  continue;
+                }
             }
+
+          if (has_folder)
+            {
+              g_autoptr(GFile) folder_file = g_file_new_for_uri (folder_uri);
+              _editor_window_open_folder (ewin, folder_file);
+            }
+
+          if (g_variant_lookup (window, "show-folder-sidebar", "b", &show_folder_sidebar))
+            _editor_window_set_show_folder_sidebar (ewin, show_folder_sidebar);
 
           /* We might have restored session where all files and drafts were removed.
            * In this case, we want to create a new draft page.

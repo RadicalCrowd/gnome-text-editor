@@ -42,6 +42,13 @@
             </child>
             <child>
               <object class="GtkButton">
+                <property name="tooltip-text" translatable="yes">Open Folder…</property>
+                <property name="icon-name">folder-open-symbolic</property>
+                <property name="action-name">win.open-folder</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton">
                 <property name="tooltip-text" translatable="yes">Open New Document</property>
                 <property name="icon-name">document-open-symbolic</property>
                 <property name="action-name">win.open</property>

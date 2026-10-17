@@ -22,6 +22,7 @@
 
 #include <adwaita.h>
 
+#include "editor-folder-panel.h"
 #include "editor-fullscreen-box.h"
 #include "editor-open-popover-private.h"
 #include "editor-page-private.h"
@@ -55,6 +56,9 @@ struct _EditorWindow
   GMenu                *options_menu_model;
   EditorStatusbar      *statusbar;
   EditorFullscreenBox  *fullscreen_box;
+  EditorFolderPanel    *folder_panel;
+  AdwOverlaySplitView  *folder_split_view;
+  GtkToggleButton      *folder_sidebar_button;
 
   /* Borrowed References */
   EditorPage           *visible_page;
@@ -92,5 +96,17 @@ gboolean      _editor_window_request_close_pages  (EditorWindow      *self,
                                                    GList             *pages,
                                                    gboolean           close_saved);
 GCancellable *_editor_window_get_cancellable      (EditorWindow      *self);
+void          _editor_window_open_folder             (EditorWindow      *self,
+                                                      GFile             *folder);
+GFile        *_editor_window_get_folder              (EditorWindow      *self);
+gboolean      _editor_window_get_show_folder_sidebar (EditorWindow      *self);
+void          _editor_window_set_show_folder_sidebar (EditorWindow      *self,
+                                                      gboolean           show);
+void          editor_window_actions_open_folder_cb   (GtkWidget         *widget,
+                                                      const char        *action_name,
+                                                      GVariant          *param);
+void          editor_window_actions_toggle_folder_sidebar_cb (GtkWidget  *widget,
+                                                              const char *action_name,
+                                                              GVariant   *param);
 
 G_END_DECLS

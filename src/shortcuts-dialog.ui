@@ -90,6 +90,18 @@
         </child>
         <child>
           <object class="AdwShortcutsItem">
+            <property name="title" translatable="yes" context="shortcut window">Open folder</property>
+            <property name="accelerator">&lt;control&gt;&lt;shift&gt;o</property>
+          </object>
+        </child>
+        <child>
+          <object class="AdwShortcutsItem">
+            <property name="title" translatable="yes" context="shortcut window">Toggle folder sidebar</property>
+            <property name="accelerator">&lt;control&gt;&lt;shift&gt;e</property>
+          </object>
+        </child>
+        <child>
+          <object class="AdwShortcutsItem">
             <property name="title" translatable="yes" context="shortcut window">Find document by name</property>
             <property name="accelerator">&lt;control&gt;k</property>
           </object>

@@ -918,7 +918,12 @@ editor_window_class_init (EditorWindowClass *klass)
 
   gtk_widget_class_set_template_from_resource (widget_class, "/org/gnome/TextEditor/ui/editor-window.ui");
 
+  g_type_ensure (EDITOR_TYPE_FOLDER_PANEL);
+
   gtk_widget_class_bind_template_child (widget_class, EditorWindow, empty);
+  gtk_widget_class_bind_template_child (widget_class, EditorWindow, folder_panel);
+  gtk_widget_class_bind_template_child (widget_class, EditorWindow, folder_split_view);
+  gtk_widget_class_bind_template_child (widget_class, EditorWindow, folder_sidebar_button);
   gtk_widget_class_bind_template_child (widget_class, EditorWindow, fullscreen_box);
   gtk_widget_class_bind_template_child (widget_class, EditorWindow, indicator);
   gtk_widget_class_bind_template_child (widget_class, EditorWindow, is_modified);
@@ -944,6 +949,10 @@ editor_window_class_init (EditorWindowClass *klass)
 
   gtk_widget_class_add_binding_action (widget_class, GDK_KEY_w, GDK_CONTROL_MASK, "win.close-page-or-window", NULL);
   gtk_widget_class_add_binding_action (widget_class, GDK_KEY_o, GDK_CONTROL_MASK, "win.open", NULL);
+  gtk_widget_class_add_binding_action (widget_class, GDK_KEY_o, GDK_CONTROL_MASK | GDK_SHIFT_MASK, "win.open-folder", NULL);
+  gtk_widget_class_add_binding_action (widget_class, GDK_KEY_O, GDK_CONTROL_MASK | GDK_SHIFT_MASK, "win.open-folder", NULL);
+  gtk_widget_class_add_binding_action (widget_class, GDK_KEY_e, GDK_CONTROL_MASK | GDK_SHIFT_MASK, "win.toggle-folder-sidebar", NULL);
+  gtk_widget_class_add_binding_action (widget_class, GDK_KEY_E, GDK_CONTROL_MASK | GDK_SHIFT_MASK, "win.toggle-folder-sidebar", NULL);
   gtk_widget_class_add_binding_action (widget_class, GDK_KEY_k, GDK_CONTROL_MASK, "win.focus-search", NULL);
   gtk_widget_class_add_binding_action (widget_class, GDK_KEY_t, GDK_CONTROL_MASK, "session.new-draft", NULL);
   gtk_widget_class_add_binding_action (widget_class, GDK_KEY_n, GDK_CONTROL_MASK, "app.new-window", NULL);
@@ -1395,3 +1404,45 @@ _editor_window_get_cancellable (EditorWindow *self)
 
   return self->cancellable;
 }
+
+void
+_editor_window_open_folder (EditorWindow *self,
+                            GFile        *folder)
+{
+  g_return_if_fail (EDITOR_IS_WINDOW (self));
+  g_return_if_fail (folder == NULL || G_IS_FILE (folder));
+
+  editor_folder_panel_set_folder (self->folder_panel, folder);
+  if (folder != NULL)
+    _editor_window_set_show_folder_sidebar (self, TRUE);
+}
+
+GFile *
+_editor_window_get_folder (EditorWindow *self)
+{
+  g_return_val_if_fail (EDITOR_IS_WINDOW (self), NULL);
+
+  return editor_folder_panel_get_folder (self->folder_panel);
+}
+
+gboolean
+_editor_window_get_show_folder_sidebar (EditorWindow *self)
+{
+  g_return_val_if_fail (EDITOR_IS_WINDOW (self), FALSE);
+
+  if (self->folder_sidebar_button != NULL)
+    return gtk_toggle_button_get_active (self->folder_sidebar_button);
+
+  return FALSE;
+}
+
+void
+_editor_window_set_show_folder_sidebar (EditorWindow *self,
+                                        gboolean      show)
+{
+  g_return_if_fail (EDITOR_IS_WINDOW (self));
+
+  if (self->folder_sidebar_button != NULL)
+    gtk_toggle_button_set_active (self->folder_sidebar_button, show);
+}
+

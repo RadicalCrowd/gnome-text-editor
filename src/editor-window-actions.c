@@ -408,6 +408,77 @@ editor_window_actions_open_cb (GtkWidget  *widget,
 }
 
 static void
+editor_window_actions_open_folder_finish_cb (GObject      *object,
+                                             GAsyncResult *result,
+                                             gpointer      user_data)
+{
+  GtkFileDialog *dialog = (GtkFileDialog *)object;
+  g_autoptr(EditorWindow) self = user_data;
+  g_autoptr(GError) error = NULL;
+  g_autoptr(GFile) folder = NULL;
+
+  g_assert (GTK_IS_FILE_DIALOG (dialog));
+  g_assert (G_IS_ASYNC_RESULT (result));
+  g_assert (EDITOR_IS_WINDOW (self));
+
+  if ((folder = gtk_file_dialog_select_folder_finish (dialog, result, &error)))
+    {
+      _editor_window_open_folder (self, folder);
+    }
+}
+
+void
+editor_window_actions_open_folder_cb (GtkWidget  *widget,
+                                      const char *action_name,
+                                      GVariant   *param)
+{
+  EditorWindow *self = (EditorWindow *)widget;
+  g_autoptr(GtkFileDialog) dialog = NULL;
+  GFile *current_folder;
+
+  g_assert (EDITOR_IS_WINDOW (self));
+
+  if (self->open_menu_button != NULL)
+    gtk_menu_button_popdown (self->open_menu_button);
+
+  dialog = gtk_file_dialog_new ();
+  gtk_file_dialog_set_title (dialog, _("Open Folder"));
+
+  current_folder = _editor_window_get_folder (self);
+  if (current_folder != NULL)
+    gtk_file_dialog_set_initial_folder (dialog, current_folder);
+  else
+    {
+      g_autoptr(GSettings) settings = g_settings_new ("org.gnome.TextEditor");
+      g_autofree char *uri = g_settings_get_string (settings, "last-save-directory");
+
+      if (uri && uri[0])
+        {
+          g_autoptr(GFile) dir = g_file_new_for_uri (uri);
+          gtk_file_dialog_set_initial_folder (dialog, dir);
+        }
+    }
+
+  gtk_file_dialog_select_folder (dialog,
+                                 GTK_WINDOW (self),
+                                 NULL,
+                                 editor_window_actions_open_folder_finish_cb,
+                                 g_object_ref (self));
+}
+
+void
+editor_window_actions_toggle_folder_sidebar_cb (GtkWidget  *widget,
+                                                const char *action_name,
+                                                GVariant   *param)
+{
+  EditorWindow *self = (EditorWindow *)widget;
+
+  g_assert (EDITOR_IS_WINDOW (self));
+
+  _editor_window_set_show_folder_sidebar (self, !_editor_window_get_show_folder_sidebar (self));
+}
+
+static void
 editor_window_actions_show_primary_menu_cb (GtkWidget  *widget,
                                             const char *action_name,
                                             GVariant   *param)
@@ -645,6 +716,14 @@ _editor_window_class_actions_init (EditorWindowClass *klass)
                                    "win.open",
                                    NULL,
                                    editor_window_actions_open_cb);
+  gtk_widget_class_install_action (widget_class,
+                                   "win.open-folder",
+                                   NULL,
+                                   editor_window_actions_open_folder_cb);
+  gtk_widget_class_install_action (widget_class,
+                                   "win.toggle-folder-sidebar",
+                                   NULL,
+                                   editor_window_actions_toggle_folder_sidebar_cb);
   gtk_widget_class_install_action (widget_class,
                                    "win.show-primary-menu",
                                    NULL,
