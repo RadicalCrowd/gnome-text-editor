@@ -403,16 +403,19 @@ editor_folder_panel_dispose (GObject *object)
   EditorFolderPanel *self = (EditorFolderPanel *)object;
   GtkWidget *child;
 
-  gtk_widget_dispose_template (GTK_WIDGET (self), EDITOR_TYPE_FOLDER_PANEL);
-
-  while ((child = gtk_widget_get_first_child (GTK_WIDGET (self))))
-    gtk_widget_unparent (child);
+  if (self->list_view != NULL)
+    gtk_list_view_set_model (self->list_view, NULL);
 
   g_clear_object (&self->folder);
   g_clear_object (&self->tree_model);
   g_clear_object (&self->sorter);
   g_clear_object (&self->filter);
   g_clear_pointer (&self->filter_text, g_free);
+
+  gtk_widget_dispose_template (GTK_WIDGET (self), EDITOR_TYPE_FOLDER_PANEL);
+
+  while ((child = gtk_widget_get_first_child (GTK_WIDGET (self))))
+    gtk_widget_unparent (child);
 
   G_OBJECT_CLASS (editor_folder_panel_parent_class)->dispose (object);
 }
@@ -561,7 +564,8 @@ editor_folder_panel_set_folder (EditorFolderPanel *self,
     {
       gtk_label_set_text (self->folder_name_label, _("No Folder Open"));
       gtk_widget_set_tooltip_text (GTK_WIDGET (self->folder_name_label), NULL);
-      gtk_list_view_set_model (self->list_view, NULL);
+      if (self->list_view != NULL)
+        gtk_list_view_set_model (self->list_view, NULL);
       g_clear_object (&self->tree_model);
       gtk_stack_set_visible_child_name (self->stack, "empty");
     }
@@ -575,11 +579,12 @@ editor_folder_panel_set_folder (EditorFolderPanel *self,
       gtk_label_set_text (self->folder_name_label, basename ? basename : path);
       gtk_widget_set_tooltip_text (GTK_WIDGET (self->folder_name_label), path);
 
+      if (self->list_view != NULL)
+        gtk_list_view_set_model (self->list_view, NULL);
       g_clear_object (&self->tree_model);
 
       root_model = create_folder_model (self, folder);
       self->tree_model = gtk_tree_list_model_new (root_model, FALSE, FALSE, create_tree_model_func, self, NULL);
-      g_object_unref (root_model);
 
       selection = gtk_no_selection_new (g_object_ref (G_LIST_MODEL (self->tree_model)));
       gtk_list_view_set_model (self->list_view, GTK_SELECTION_MODEL (selection));

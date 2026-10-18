@@ -29,6 +29,7 @@
 #include "editor-path-private.h"
 #include "editor-save-changes-dialog-private.h"
 #include "editor-session-private.h"
+#include "editor-window-private.h"
 
 typedef struct
 {
@@ -289,6 +290,7 @@ _editor_save_changes_dialog_new (GtkWindow *parent,
       if (file == NULL)
         {
           g_autofree gchar *tmp = g_steal_pointer (&title_str);
+          GFile *win_folder = NULL;
 
           if (tmp == NULL)
             tmp = g_strdup (_("Untitled Document"));
@@ -296,11 +298,18 @@ _editor_save_changes_dialog_new (GtkWindow *parent,
           /* translators: %s is replaced with the title of the file */
           title_str = g_strdup_printf (_("%s (new)"), tmp);
 
-          /* Suggest saving in ~/Documents. If they wanted more
-           * precision on saving, they can save it outside of this
-           * dialog instead.
-           */
-          directory = g_file_new_for_path (g_get_user_special_dir (G_USER_DIRECTORY_DOCUMENTS));
+          if (parent != NULL && EDITOR_IS_WINDOW (parent))
+            win_folder = _editor_window_get_folder (EDITOR_WINDOW (parent));
+
+          if (win_folder != NULL)
+            {
+              directory = g_object_ref (win_folder);
+            }
+          else
+            {
+              const char *docs_dir = g_get_user_special_dir (G_USER_DIRECTORY_DOCUMENTS);
+              directory = g_file_new_for_path (docs_dir ? docs_dir : g_get_home_dir ());
+            }
         }
 
       if (directory == NULL)

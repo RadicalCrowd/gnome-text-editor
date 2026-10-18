@@ -316,25 +316,24 @@ editor_window_actions_open_text_file_cb (GObject      *object,
   g_autoptr(EditorWindow) self = user_data;
   g_autoptr(GError) error = NULL;
   g_autoptr(GListModel) files = NULL;
-  const char *encoding = NULL;
 
   g_assert (GTK_IS_FILE_DIALOG (dialog));
   g_assert (G_IS_ASYNC_RESULT (result));
   g_assert (EDITOR_IS_WINDOW (self));
 
-  if ((files = gtk_file_dialog_open_multiple_text_files_finish (dialog, result, &encoding, &error)))
+  if ((files = gtk_file_dialog_open_multiple_finish (dialog, result, &error)))
     {
-      const GtkSourceEncoding *translated = NULL;
       guint n_items = g_list_model_get_n_items (files);
-
-      if (encoding != NULL && g_strcmp0 (encoding, "automatic") != 0)
-        translated = gtk_source_encoding_get_from_charset (encoding);
 
       for (guint i = 0; i < n_items; i++)
         {
           g_autoptr(GFile) file = g_list_model_get_item (files, i);
-          editor_session_open (EDITOR_SESSION_DEFAULT, self, file, translated);
+          editor_session_open (EDITOR_SESSION_DEFAULT, self, file, NULL);
         }
+    }
+  else if (!g_error_matches (error, GTK_DIALOG_ERROR, GTK_DIALOG_ERROR_DISMISSED))
+    {
+      g_warning ("%s", error->message);
     }
 }
 
@@ -351,6 +350,7 @@ editor_window_actions_open_cb (GtkWidget  *widget,
   EditorDocument *document;
   EditorPage *page;
   GFile *dfile;
+  GFile *folder;
 
   g_assert (EDITOR_IS_WINDOW (self));
 
@@ -358,6 +358,7 @@ editor_window_actions_open_cb (GtkWidget  *widget,
 
   dialog = gtk_file_dialog_new ();
   filters = g_list_store_new (GTK_TYPE_FILE_FILTER);
+  folder = _editor_window_get_folder (self);
 
   if ((page = editor_window_get_visible_page (self)) &&
       (document = editor_page_get_document (page)) &&
@@ -367,6 +368,10 @@ editor_window_actions_open_cb (GtkWidget  *widget,
 
       if (dir != NULL)
         gtk_file_dialog_set_initial_folder (dialog, dir);
+    }
+  else if (folder != NULL)
+    {
+      gtk_file_dialog_set_initial_folder (dialog, folder);
     }
   else
     {
@@ -400,11 +405,11 @@ editor_window_actions_open_cb (GtkWidget  *widget,
   gtk_file_dialog_set_default_filter (dialog, text_files);
 #endif
 
-  gtk_file_dialog_open_multiple_text_files (dialog,
-                                            GTK_WINDOW (self),
-                                            NULL,
-                                            editor_window_actions_open_text_file_cb,
-                                            g_object_ref (self));
+  gtk_file_dialog_open_multiple (dialog,
+                                 GTK_WINDOW (self),
+                                 NULL,
+                                 editor_window_actions_open_text_file_cb,
+                                 g_object_ref (self));
 }
 
 static void
@@ -424,6 +429,10 @@ editor_window_actions_open_folder_finish_cb (GObject      *object,
   if ((folder = gtk_file_dialog_select_folder_finish (dialog, result, &error)))
     {
       _editor_window_open_folder (self, folder);
+    }
+  else if (!g_error_matches (error, GTK_DIALOG_ERROR, GTK_DIALOG_ERROR_DISMISSED))
+    {
+      g_warning ("%s", error->message);
     }
 }
 

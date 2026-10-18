@@ -35,6 +35,7 @@
 #include "editor-source-map.h"
 #include "editor-source-view.h"
 #include "editor-utils-private.h"
+#include "editor-window-private.h"
 
 #define HIDE_POSITION_DELAY_SECONDS 1
 
@@ -1242,30 +1243,6 @@ _editor_page_save (EditorPage *self)
                                g_object_ref (self));
 }
 
-static GtkSourceNewlineType
-parse_line_ending (const char *str)
-{
-  if (*str == '\n')
-    return GTK_SOURCE_NEWLINE_TYPE_LF;
-
-  if (str[0] == '\r' && str[1] == '\n')
-    return GTK_SOURCE_NEWLINE_TYPE_CR_LF;
-
-  if (*str == '\r')
-    return GTK_SOURCE_NEWLINE_TYPE_CR;
-
-  return 0;
-}
-
-static const GtkSourceEncoding *
-parse_encoding (const char *str)
-{
-  if (g_strcmp0 (str, "") == 0 || g_strcmp0 (str, "automatic") == 0)
-    return NULL;
-
-  return gtk_source_encoding_get_from_charset (str);
-}
-
 static void
 editor_page_save_as_cb (GObject      *object,
                         GAsyncResult *result,
@@ -1275,16 +1252,15 @@ editor_page_save_as_cb (GObject      *object,
   g_autoptr(EditorPage) self = user_data;
   g_autoptr(GError) error = NULL;
   g_autoptr(GFile) dest = NULL;
-  const char *encoding = NULL;
-  const char *line_endings = NULL;
 
   g_assert (GTK_IS_FILE_DIALOG (dialog));
   g_assert (G_IS_ASYNC_RESULT (result));
   g_assert (EDITOR_IS_PAGE (self));
 
-  if (!(dest = gtk_file_dialog_save_text_file_finish (dialog, result, &encoding, &line_endings, &error)))
+  if (!(dest = gtk_file_dialog_save_finish (dialog, result, &error)))
     {
-      g_warning ("%s", error->message);
+      if (!g_error_matches (error, GTK_DIALOG_ERROR, GTK_DIALOG_ERROR_DISMISSED))
+        g_warning ("%s", error->message);
       return;
     }
 
@@ -1295,12 +1271,6 @@ editor_page_save_as_cb (GObject      *object,
 
     g_settings_set_string (settings, "last-save-directory", uri);
   }
-
-  if (encoding != NULL)
-    _editor_document_set_encoding (self->document, parse_encoding (encoding));
-
-  if (line_endings != NULL && line_endings[0])
-    _editor_document_set_newline_type (self->document, parse_line_ending (line_endings));
 
   _editor_document_save_async (self->document,
                                dest,
@@ -1319,6 +1289,7 @@ _editor_page_save_as (EditorPage *self,
   EditorWindow *window;
   g_autofree char *uri = NULL;
   GFile *file;
+  GFile *folder = NULL;
 
   g_return_if_fail (EDITOR_IS_PAGE (self));
 
@@ -1330,6 +1301,9 @@ _editor_page_save_as (EditorPage *self,
   _editor_page_raise (self);
 
   window = _editor_page_get_window (self);
+  if (window != NULL)
+    folder = _editor_window_get_folder (window);
+
   dialog = gtk_file_dialog_new ();
 
   if (filename != NULL)
@@ -1356,6 +1330,10 @@ _editor_page_save_as (EditorPage *self,
 
       gtk_file_dialog_set_initial_folder (dialog, parent);
     }
+  else if (folder != NULL)
+    {
+      gtk_file_dialog_set_initial_folder (dialog, folder);
+    }
   else if (directory != NULL)
     {
       gtk_file_dialog_set_initial_folder (dialog, directory);
@@ -1368,11 +1346,11 @@ _editor_page_save_as (EditorPage *self,
       gtk_file_dialog_set_initial_name (dialog, suggestion);
     }
 
-  gtk_file_dialog_save_text_file (dialog,
-                                  GTK_WINDOW (window),
-                                  NULL,
-                                  editor_page_save_as_cb,
-                                  g_object_ref (self));
+  gtk_file_dialog_save (dialog,
+                        GTK_WINDOW (window),
+                        NULL,
+                        editor_page_save_as_cb,
+                        g_object_ref (self));
 }
 
 gboolean

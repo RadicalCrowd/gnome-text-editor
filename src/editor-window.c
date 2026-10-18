@@ -1409,12 +1409,18 @@ void
 _editor_window_open_folder (EditorWindow *self,
                             GFile        *folder)
 {
+  EditorSession *session;
+
   g_return_if_fail (EDITOR_IS_WINDOW (self));
   g_return_if_fail (folder == NULL || G_IS_FILE (folder));
 
   editor_folder_panel_set_folder (self->folder_panel, folder);
   if (folder != NULL)
     _editor_window_set_show_folder_sidebar (self, TRUE);
+
+  if (EDITOR_APPLICATION_DEFAULT != NULL &&
+      (session = editor_application_get_session (EDITOR_APPLICATION_DEFAULT)))
+    _editor_session_mark_dirty (session);
 }
 
 GFile *
@@ -1440,9 +1446,15 @@ void
 _editor_window_set_show_folder_sidebar (EditorWindow *self,
                                         gboolean      show)
 {
+  EditorSession *session;
+
   g_return_if_fail (EDITOR_IS_WINDOW (self));
 
   if (self->folder_sidebar_button != NULL)
     gtk_toggle_button_set_active (self->folder_sidebar_button, show);
+
+  if (EDITOR_APPLICATION_DEFAULT != NULL &&
+      (session = editor_application_get_session (EDITOR_APPLICATION_DEFAULT)))
+    _editor_session_mark_dirty (session);
 }
 

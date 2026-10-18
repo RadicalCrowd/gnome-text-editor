@@ -2134,7 +2134,8 @@ editor_session_load_recent_worker (GTask        *task,
 
       if (g_file_is_native (file))
         {
-          if (!g_file_query_exists (file, cancellable))
+          if (!g_file_query_exists (file, cancellable) ||
+              g_file_query_file_type (file, G_FILE_QUERY_INFO_NONE, cancellable) == G_FILE_TYPE_DIRECTORY)
             {
               removed = TRUE;
               g_bookmark_file_remove_item (bookmarks, uri, NULL);
