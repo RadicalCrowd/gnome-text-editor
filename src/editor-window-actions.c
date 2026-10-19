@@ -428,7 +428,23 @@ editor_window_actions_open_folder_finish_cb (GObject      *object,
 
   if ((folder = gtk_file_dialog_select_folder_finish (dialog, result, &error)))
     {
-      _editor_window_open_folder (self, folder);
+      EditorSession *session = NULL;
+      EditorWindow *target = self;
+
+      if (EDITOR_APPLICATION_DEFAULT != NULL)
+        session = editor_application_get_session (EDITOR_APPLICATION_DEFAULT);
+
+      /* If the current window already has a folder or pages, open in a new window */
+      if (_editor_window_get_folder (self) != NULL || editor_window_get_n_pages (self) > 0)
+        {
+          if (session != NULL)
+            target = _editor_session_create_window_no_draft (session);
+          else
+            target = _editor_window_new ();
+        }
+
+      _editor_window_open_folder (target, folder);
+      gtk_window_present (GTK_WINDOW (target));
     }
   else if (!g_error_matches (error, GTK_DIALOG_ERROR, GTK_DIALOG_ERROR_DISMISSED))
     {

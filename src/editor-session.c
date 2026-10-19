@@ -1424,8 +1424,8 @@ editor_session_open (EditorSession           *self,
 
   if (g_file_query_file_type (file, G_FILE_QUERY_INFO_NONE, NULL) == G_FILE_TYPE_DIRECTORY)
     {
-      if (window == NULL)
-        window = find_or_create_window (self);
+      if (window == NULL || _editor_window_get_folder (window) != NULL || editor_window_get_n_pages (window) > 0)
+        window = _editor_session_create_window_no_draft (self);
 
       _editor_window_open_folder (window, file);
       gtk_window_present (GTK_WINDOW (window));
