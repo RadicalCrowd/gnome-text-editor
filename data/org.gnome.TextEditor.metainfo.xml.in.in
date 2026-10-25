@@ -7,11 +7,11 @@
     <name>The GNOME Project</name>
   </developer>
   <launchable type="desktop-id">@app_id@.desktop</launchable>
-  <name>Text Editor</name>
+  <name>Text Editor Extended</name>
   <project_group>GNOME</project_group>
-  <summary>Edit text files</summary>
+  <summary>Edit text files and browse directory workspaces</summary>
   <description>
-    <p>GNOME Text Editor is a simple text editor focused on a pleasing default experience.</p>
+    <p>GNOME Text Editor Extended is a fork of GNOME Text Editor adding native directory workspaces, recursive asynchronous folder tree navigation, and Markdown dual-mode preview editing.</p>
 	</description>
 
   <url type="homepage">https://apps.gnome.org/TextEditor/</url>
@@ -53,6 +53,17 @@
   </supports>
 
   <releases>
+    <release version="51.0-folder.1" date="2026-10-25" type="stable">
+      <description>
+        <p>First official release of GNOME Text Editor Extended, featuring native workspace directory browsing:</p>
+        <ul>
+          <li>Integrated asynchronous recursive folder tree panel in sidebar</li>
+          <li>Real-time case-folded file and folder search filtering</li>
+          <li>Multi-vector directory opening (CLI, GUI menu, keyboard shortcuts Ctrl+Shift+O / Ctrl+Shift+E)</li>
+          <li>Workspace session persistence restoring active folder path and sidebar state</li>
+        </ul>
+      </description>
+    </release>
     <release version="51.0" date="2026-09-14" type="development"/>
   </releases>
 </component>
